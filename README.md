@@ -4,9 +4,9 @@
 
 
 ```bash
+git clone https://github.com/CactesTech/cactes-taolink-burntool.git
 pip install -r requirements.txt
 ```
-
 
 
 ## How To?

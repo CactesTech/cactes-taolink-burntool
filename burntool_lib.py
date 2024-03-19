@@ -6,56 +6,9 @@ from queue import Queue, Empty
 from enum import Enum, auto
 
 import zlib
-from intelhex import IntelHex
 
 from burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
-
-def intelhex_to_data_array(hex_file_path):
-    ih = IntelHex(hex_file_path)
-
-    # Determine the starting and ending addresses
-    start_addr = min(ih.addresses())
-    end_addr =  max(ih.addresses())
-
-    # Fill the initial part of the array with 0xFF up to the starting address
-    data_array = []
-    # Append the actual data from the HEX file
-    for addr in range(start_addr, end_addr + 1):
-        data_array.append(ih[addr])
-
-    return start_addr, end_addr, bytearray(data_array)
-
-def merge_segments_into_one(input_hex_file, output_hex_file):
-    # Load the original IntelHex file
-    ih = IntelHex(input_hex_file)
-
-    # Find the minimum and maximum addresses of the entire file
-    min_address = min(ih.addresses())
-    max_address = max(ih.addresses())
-
-    # Create a new IntelHex object to hold the merged content
-    merged_ih = IntelHex()
-
-    # Merge segments by copying all data to the new object, effectively ignoring segment boundaries
-    for address in range(min_address, max_address + 1):
-        if address in ih:  # Check if the address contains data
-            merged_ih[address] = ih[address]
-
-    # Write the merged content to a new hex file
-    merged_ih.write_hex_file(output_hex_file)
-
-
-def data_array_to_intelhex(hex_file_path, start_address, data):
-    # Create an IntelHex object
-    ih = IntelHex()
-
-    # Add some data starting at address 0x1000
-    for i, byte in enumerate(data):
-        ih[start_address + i] = byte
-
-    # Write to a hex file
-    ih.write_hex_file(hex_file_path)
-
+from burntool_util import intelhex_to_data_array
 
 class BurnToolOpCode(Enum):
     UP_OPCODE_GET_TYPE = 0x00
