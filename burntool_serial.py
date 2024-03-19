@@ -48,7 +48,7 @@ class BurnToolSerial(object):
 
         self.stop_event = threading.Event()
 
-    def start(self, port, baud, bytesize, stopbits, parity):
+    def start(self, port, baud, bytesize, stopbits, parity, timeout=0.01):
         logging.debug(f"serial start, {port}/{baud}/{bytesize}/{stopbits}/{parity}")
         if self.serial:
             self.serial.close()
@@ -59,7 +59,7 @@ class BurnToolSerial(object):
                                         bytesize=bytesize,
                                         stopbits=stopbits,
                                         parity=PARITY_DICT[parity],
-                                        timeout=0.2)
+                                        timeout=timeout)
             self.tx_queue.queue.clear()
             self.rx_queue.queue.clear()
             self.stop_event.set()
@@ -95,7 +95,7 @@ class BurnToolSerial(object):
             try:
                 data = self.tx_queue.get(True, 0.01)
                 self.serial.write(data)
-                # logging.debug(f'tx:{data.hex()}')
+                logging.debug(f'serial tx:{data.hex()}')
             except queue.Empty:
                 continue
             except IOError as e:
@@ -117,7 +117,7 @@ class BurnToolSerial(object):
                         self.on_received(data)
                     else:
                         self.rx_queue.put(data)
-                    # logging.debug(f'rx:{data.hex()}')
+                    logging.debug(f'serial rx:{data.hex()}')
             except IOError as e:
                 logging.warning(f"{e} {traceback.format_exc()}")
                 self.serial.close()
