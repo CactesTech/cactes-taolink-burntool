@@ -6,7 +6,6 @@ from queue import Queue, Empty
 from enum import Enum, auto
 
 import zlib
-import fire
 from intelhex import IntelHex
 
 from burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
@@ -640,45 +639,3 @@ class BurnToolParser:
         self.remained_length = 0
         self.data = b''
         logging.debug("timeout")
-
-def base16_to_bin(in_file, out_file):
-    data = b''
-    with open(in_file, 'r') as f:
-        for line in f:
-            data += bytes.fromhex(line)
-
-    with open(out_file, 'wb') as f:
-        f.write(data)
-
-def carr_to_bin(in_file, out_file):
-    data = b''
-    with open(in_file, 'r') as f:
-        for line in f:
-            if '0x' in line:
-                x = line.strip().replace(',', '')[2:]
-                print(f"{x}")
-                res = bytes.fromhex(x)[::-1]
-                print(f"res: {res.hex()}")
-                data += res
-    with open(out_file, 'wb') as f:
-        f.write(data)
-
-if __name__ == '__main__':
-    # logging.basicConfig(
-    #     filename="burntool.log",
-    #     level=logging.DEBUG,
-    #     format='%(asctime)s - %(levelname)s - %(message)s'
-    # )
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-
-    fire.Fire({
-        "host": BurnToolHost,
-        "device": BurnToolDevice,
-        "parser": BurnToolParser,
-        "base16_to_bin": base16_to_bin,
-        "carr_to_bin": carr_to_bin,
-    })
