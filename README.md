@@ -1,6 +1,5 @@
 # Python BurnTool for TaoLink TK8620
 
-
 ## Install python enviroment
 
 
@@ -8,7 +7,11 @@
 pip install -r requirements.txt
 ```
 
-## Program TK8620
+
+
+## How To?
+
+### Program TK8620
 
 ```bash
 python burntoolcli.py host --port=COM6 --fw=real.hex run
@@ -27,16 +30,21 @@ ${cross_prefix}${cross_objcopy}${cross_suffix} -O ihex "${ProjName}.elf" "${Proj
 
 ![image-20240319160430168](https://img.jiapeng.me/20240319-160431-453.png)
 
-## Simulate a TK8620 OTA Device
+### TK8620 OTA Protocol Parser (aka. the sniffer)
 
+```
+python burntoolcli.py parser --port=COM39 run
+```
+
+### Simulate a TK8620 OTA Device
 
 ```
 python burntoolcli.py device --port=COM39 run
 ```
 
-## TK8620 OTA Sniffer
 
-```
-python burntoolcli.py parser --port=COM39 run
-```
+## Work In Progress
+
+- Auto changing the baud rate
+- A GUI interface (Maybe)
 
