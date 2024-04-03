@@ -35,7 +35,6 @@ ${cross_prefix}${cross_objcopy}${cross_suffix} -O ihex "${ProjName}.elf" "${Proj
 Parser mode is used to capture the OTA protocol from the TK8620 device. This helps understand the OTA procedrue quickly.
 
 ```bash
-```
 python burntoolcli.py parser --port=COM39 run
 ```
 

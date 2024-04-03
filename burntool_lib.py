@@ -2,11 +2,13 @@ import os, sys, re
 import logging, traceback
 import time
 import threading
+from threading import Thread, Event, RLock
 from queue import Queue, Empty
 from enum import Enum, auto
 
 import zlib
 
+from burntool_timer import BurnToolTimer
 from burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
 from burntool_util import intelhex_to_data_array
 
@@ -57,6 +59,7 @@ class BurnToolOpCode(Enum):
 
 class BurnToolStatus(Enum):
     IDLE = auto()
+    WAIT_ACK = auto()
     CONNECTED = auto()
 
 class BurnToolRxStatus(Enum):
@@ -143,24 +146,6 @@ class BurnToolFrame:
         data = data[1:]
         return BurnToolFrame(opcode, data)
 
-class BurnToolTimer:
-    def __init__(self, callback):
-        self.callback = callback
-        self.timer = None
-
-    def start(self, interval=0.5):
-        logging.debug("start timer")
-        if self.timer is not None:
-            self.timer.cancel()
-        self.timer = threading.Timer(interval, self.callback)
-        self.timer.start()
-
-    def stop(self):
-        logging.debug("stop timer")
-        if self.timer is not None:
-            self.timer.cancel()
-            self.timer = None
-
 class BurnToolRxPkt:
     def __init__(self) -> None:
         self.opcodes = [v.value for _, v in BurnToolOpCode.__members__.items()]
@@ -173,10 +158,12 @@ class BurnToolRxPkt:
         self.frm_len = 0
         self.frm_data = b''
 
-        self.timer = BurnToolTimer(self.timeout)
+        self.timer = BurnToolTimer(self.timeout, 0.5)
         self.rxq = Queue()
 
     def timeout(self):
+        self.timer.stop()
+
         self.data = b''
 
         self.sta = BurnToolRxStatus.HEAD
@@ -191,7 +178,7 @@ class BurnToolRxPkt:
 
     def rx(self, data):
         self.data += data
-        self.timer.start()
+        self.timer.start(0.5)
         while len(self.data) >= 7:
             if self.sta == BurnToolRxStatus.HEAD:
                 while len(self.data) >= 7:
@@ -238,7 +225,7 @@ class BurnToolRxPkt:
 class BurnToolHost:
     def __init__(self, port, fw="fw.hex", patch="patch.bin"):
         self.port = port
-        self.patch = patch
+        self.patch = f"{os.path.dirname(os.path.abspath(__file__))}/{patch}"
         self.fw = fw
 
         self.sta = BurnToolStatus.IDLE
@@ -258,6 +245,9 @@ class BurnToolHost:
             (self.run_execute_code, "execute code"),
             (self.run_disconnect, "disconnect"),
         ]
+
+        self.wait_data = b''
+        self.wait_ack = False
 
         self.fw_tail = bytes.fromhex('0104230051525251')
         self.fw_start_addr, self.fw_end_addr, self.fw_data = intelhex_to_data_array(self.fw)
@@ -280,12 +270,15 @@ class BurnToolHost:
     def on_received(self, data):
         if self.sta == BurnToolStatus.IDLE:
             try:
-                data = data.decode('utf-8')
-                logging.debug(f"{data}")
-                if 'TurMass.' in data:
+                self.wait_data += data
+                if self.wait_data.find('TurMass.'.encode('utf-8')) >= 0:
                     self.serial.write('TaoLink.'.encode('utf-8'))
-                if 'ok' in data:
-                    self.set_sta(BurnToolStatus.CONNECTED)
+                    self.wait_data = b''
+                    self.wait_ack = True
+                if self.wait_ack:
+                    if self.wait_data.find('ok'.encode('utf-8')) >= 0:
+                        self.set_sta(BurnToolStatus.CONNECTED)
+                        self.wait_data = b''
             except:
                 logging.error(f"{traceback.format_exc()}")
             logging.debug(f"on_received: {data}")
@@ -294,20 +287,7 @@ class BurnToolHost:
 
     def on_failed(self):
         logging.error(f"on_failed")
-
-    def request1(self, data, timeout=0.5):
-        for _ in range(0, 3):
-            self.serial.write(data)
-            try:
-                opcode, address, length, data = self.rxpkt.rxq.get(timeout=timeout)
-                logging.info(f"rxpkt header: {opcode:02X}, 0x{address:08X}, {length}")
-                if data:
-                    logging.info(f"rxpkt data: {data.hex()}")
-                return opcode, address, length, data
-            except Empty:
-                logging.warning("rxpkt timeout")
-                continue
-        return None, None, 0, b''
+        os._exit(1)
 
     def request(self, opcode, address=0, msg=b'', timeout=0.5):
         data = self.frame.pack(opcode, address, msg)
@@ -324,8 +304,28 @@ class BurnToolHost:
                 continue
         return None, None, 0, b''
 
+    def reqeust_change_baudrate(self):
+        data = self.frame.pack(
+        BurnToolOpCode.UP_OPCODE_CHANGE_BAUDRATE.value, 921600, b'')
+
+        self.serial.write(data)
+        time.sleep(0.050)
+        self.rxpkt.timeout()
+
+        self.serial.serial.baudrate = 921600
+
+        opcode, address, length, data = self.request(
+            BurnToolOpCode.UP_OPCODE_CHANGE_BAUDRATE.value,
+            921600,
+            timeout=0.6
+        )
+        if opcode != BurnToolOpCode.UP_OPCODE_CHANGE_BAUDRATE_ACK.value:
+            self.serial.serial.baudrate = 115200
+            return False
+        return True
 
     def run_get_version(self):
+        self.rxpkt.timeout()
         opcode, address, length, data = self.request(
             BurnToolOpCode.UP_OPCODE_GET_TYPE.value
         )
@@ -374,8 +374,7 @@ class BurnToolHost:
         return True
 
     def run_change_baud_rate(self):
-        logging.warning("run_change_baud_rate skipped")
-        return True
+        return self.reqeust_change_baudrate()
 
     def run_program_flash(self):
         sector_size = 256
@@ -488,12 +487,13 @@ class BurnToolHost:
                             self.run_fail(f"{func.__name__} failed")
                             break
                         logging.info(f"step {i + 1}: {desp} ok")
-
+                    break
             except Empty:
                 continue
             except KeyboardInterrupt:
                 break
         self.serial.stop()
+        self.rxpkt.timer.destory()
 
 #---------------------------------------------------------------------------------------------
 # Device
@@ -578,6 +578,10 @@ class BurnToolParser:
         while True:
             try:
                 opcode, address, length, data = self.rxpkt.rxq.get(timeout=0.1)
+                if opcode == BurnToolOpCode.UP_OPCODE_CHANGE_BAUDRATE.value:
+                    self.serial.serial.baudrate = address
+                    logging.info(f"change baudrate to {self.serial.serial.baudrate}")
+
                 logging.info(f"rxpkt: {opcode:02X}, 0x{address:08X}, {length}")
                 if data:
                     logging.info(f"rxpkt data: {data.hex()}")
