@@ -161,6 +161,8 @@ class BurnToolRxPkt:
         self.timer = BurnToolTimer(self.timeout, 0.5)
         self.rxq = Queue()
 
+        self.rxl = []
+
     def timeout(self):
         self.timer.stop()
 
@@ -249,6 +251,8 @@ class BurnToolHost:
         self.wait_data = b''
         self.wait_ack = False
 
+        self.ts = 0
+
         self.fw_tail = bytes.fromhex('0104230051525251')
         self.fw_start_addr, self.fw_end_addr, self.fw_data = intelhex_to_data_array(self.fw)
         self.fw_crc = zlib.crc32(self.fw_data) & 0xFFFFFFFF
@@ -262,6 +266,7 @@ class BurnToolHost:
         if sta == BurnToolStatus.IDLE:
             pass
         elif sta == BurnToolStatus.CONNECTED:
+            self.ts = time.time()
             if self.sta != sta:
                 self.evtq.put(BurnToolEvent.CONNECTED)
         self.sta = sta
@@ -492,6 +497,7 @@ class BurnToolHost:
                 continue
             except KeyboardInterrupt:
                 break
+        logging.info(f"cost: {time.time() - self.ts:.3}s")
         self.serial.stop()
         self.rxpkt.timer.destory()
 
