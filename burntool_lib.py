@@ -10,7 +10,7 @@ import zlib
 
 from burntool_timer import BurnToolTimer
 from burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
-from burntool_util import intelhex_to_data_array
+from burntool_util import intelhex_to_data_array, taolink_hex_to_data_array
 
 class BurnToolOpCode(Enum):
     UP_OPCODE_GET_TYPE = 0x00
@@ -221,11 +221,24 @@ class BurnToolRxPkt:
                 else:
                     break
 
+def log_set_level(debug):
+    if debug:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+    else:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
 
 #---------------------------------------------------------------------------------------------
 # Host
 class BurnToolHost:
-    def __init__(self, port, fw="fw.hex", patch="patch.bin"):
+    def __init__(self, port, fw="fw.hex", patch="patch.bin", wait=False, taolink=False, debug=False):
+        log_set_level(debug)
+
         self.port = port
         self.patch = f"{os.path.dirname(os.path.abspath(__file__))}/{patch}"
         self.fw = fw
@@ -248,13 +261,20 @@ class BurnToolHost:
             (self.run_disconnect, "disconnect"),
         ]
 
+        self.wait = wait
         self.wait_data = b''
         self.wait_ack = False
 
         self.ts = 0
 
         self.fw_tail = bytes.fromhex('0104230051525251')
-        self.fw_start_addr, self.fw_end_addr, self.fw_data = intelhex_to_data_array(self.fw)
+
+        if taolink:
+            self.fw_start_addr, self.fw_end_addr, self.fw_data = taolink_hex_to_data_array(self.fw)
+        else:
+            self.fw_start_addr, self.fw_end_addr, self.fw_data = intelhex_to_data_array(self.fw)
+        print(f"{type(self.fw_data)}")
+
         self.fw_crc = zlib.crc32(self.fw_data) & 0xFFFFFFFF
 
         logging.debug(f"fw: {self.fw_start_addr:08X} - {self.fw_end_addr:08X}, {len(self.fw_data)} bytes, crc: {self.fw_crc:08X}")
@@ -282,7 +302,9 @@ class BurnToolHost:
                     self.wait_ack = True
                 if self.wait_ack:
                     if self.wait_data.find('ok'.encode('utf-8')) >= 0:
-                        self.set_sta(BurnToolStatus.CONNECTED)
+                        if not self.wait:
+                            self.set_sta(BurnToolStatus.CONNECTED)
+                        logging.warning(f"connected")
                         self.wait_data = b''
             except:
                 logging.error(f"{traceback.format_exc()}")
@@ -480,6 +502,10 @@ class BurnToolHost:
         logging.error(f"{msg}")
 
     def run(self):
+        # press any key to continue
+        if self.wait:
+            input("Press Enter to continue...")
+            self.set_sta(BurnToolStatus.CONNECTED)
         while True:
             try:
                 evt = self.evtq.get(timeout=.05)
@@ -504,7 +530,8 @@ class BurnToolHost:
 #---------------------------------------------------------------------------------------------
 # Device
 class BurnToolDevice:
-    def __init__(self, port):
+    def __init__(self, port, debug=False):
+        log_set_level(debug)
         self.port = port
         self.serial = BurnToolSerial(self.on_received, self.on_failed)
         self.serial.start(port, 115200, 8, 1, 'None')
@@ -563,7 +590,8 @@ class BurnToolDevice:
 #---------------------------------------------------------------------------------------------
 # Parser
 class BurnToolParser:
-    def __init__(self, port):
+    def __init__(self, port, debug=False):
+        log_set_level(debug)
         self.opcodes = [v.value for _, v in BurnToolOpCode.__members__.items()]
         logging.debug(f"opcodes: {self.opcodes}")
 

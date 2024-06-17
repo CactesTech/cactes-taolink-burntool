@@ -50,3 +50,12 @@ def data_array_to_intelhex(hex_file_path, start_address, data):
     # Write to a hex file
     ih.write_hex_file(hex_file_path)
 
+def taolink_hex_to_data_array(hex_file_path):
+    bin = b''
+    with open(hex_file_path, 'r') as f:
+        for l in f.readlines():
+            h = bytes.fromhex(l)[::-1]
+            bin += h
+
+    return 0xC2000000, 0xC2000000 + len(bin), bytearray(bin)
+
