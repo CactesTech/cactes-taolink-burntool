@@ -296,6 +296,7 @@ class BurnToolHost:
         if self.sta == BurnToolStatus.IDLE:
             try:
                 self.wait_data += data
+                # logging.info(f"on_received: {self.wait_data.hex()}")
                 if self.wait_data.find('TurMass.'.encode('utf-8')) >= 0:
                     self.serial.write('TaoLink.'.encode('utf-8'))
                     self.wait_data = b''

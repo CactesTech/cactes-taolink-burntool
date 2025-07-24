@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import logging, traceback
 import re
 import queue
@@ -60,6 +61,13 @@ class BurnToolSerial(object):
                                         stopbits=stopbits,
                                         parity=PARITY_DICT[parity],
                                         timeout=timeout)
+
+            # Simulate a reset signal through RTS pin
+            self.set_rts(False)
+            time.sleep(0.01)
+            self.serial.reset_input_buffer()
+            self.set_rts(True)
+
             self.tx_queue.queue.clear()
             self.rx_queue.queue.clear()
             self.stop_event.set()
@@ -74,6 +82,10 @@ class BurnToolSerial(object):
             if self.on_failed:
                 self.on_failed()
 
+    def set_rts(self, value):
+        if self.serial:
+            self.serial.rts = value
+
     def stop(self):
         self.stop_event.set()
         if self.tx_thread:
@@ -86,7 +98,7 @@ class BurnToolSerial(object):
     def write(self, data):
         # logging.info("serial tx")
         self.serial.write(data)
-        logging.info(f'serial tx:{data.hex()}')
+        # logging.info(f'serial tx:{data.hex()}')
 
         # self.tx_queue.put(data)
 
@@ -99,7 +111,7 @@ class BurnToolSerial(object):
             try:
                 data = self.tx_queue.get(True, 0.01)
                 self.serial.write(data)
-                logging.debug(f'serial tx:{data.hex()}')
+                # logging.debug(f'serial tx:{data.hex()}')
             except queue.Empty:
                 continue
             except IOError as e:
