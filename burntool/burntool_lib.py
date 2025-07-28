@@ -238,7 +238,7 @@ def log_set_level(debug):
 #---------------------------------------------------------------------------------------------
 # Host
 class BurnToolHost:
-    def __init__(self, port, fw="fw.hex", patch=None, wait=False, taolink=False, debug=False):
+    def __init__(self, port, fw="fw.hex", patch=None, wait=False, debug=False):
         log_set_level(debug)
 
         self.port = port
@@ -280,11 +280,24 @@ class BurnToolHost:
 
         self.fw_tail = bytes.fromhex('0104230051525251')
 
+        taolink = False
+        # check if ':' in fw content
+        with open(self.fw, 'r') as f:
+            for line in f:
+                if ':' in line:
+                    taolink = False
+                    break
+                else:
+                    taolink = True
+                    break
+
         if taolink:
+            logging.info("taolink private format hex file detected")
             self.fw_start_addr, self.fw_end_addr, self.fw_data = taolink_hex_to_data_array(self.fw)
         else:
+            logging.info("intelhex format hex file detected")
             self.fw_start_addr, self.fw_end_addr, self.fw_data = intelhex_to_data_array(self.fw)
-        print(f"{type(self.fw_data)}")
+        logging.debug(f"{type(self.fw_data)}")
 
         self.fw_crc = zlib.crc32(self.fw_data) & 0xFFFFFFFF
 
