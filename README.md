@@ -4,6 +4,13 @@ A Python programming tool specifically designed for TaoLink TK8620 chip, support
 
 这是一个专为 TaoLink TK8620 芯片设计的 Python 烧录工具，支持固件烧录、OTA 协议解析和设备模拟功能。
 
+## Feature | 功能特点
+
+- Auto download, no need reboot manually | 自动下载，无需手动重启
+- Support Taolink private hex file format | 支持 Taolink 私有 hex 文件格式
+- Support firmware programming, OTA protocol parsing, and device simulation | 支持固件烧录、OTA 协议解析和设备模拟
+- Easy to use command line interface | 易于使用的命令行接口
+
 ## How To Program TK8620 | 如何对 TK8620 进行编程烧录
 
 ![image-20250728121750951](https://img.cactes.com/20250728-121803-645.png)
@@ -51,3 +58,5 @@ ${cross_prefix}${cross_objcopy}${cross_suffix} -O ihex "${ProjName}.elf" "${Proj
 ## Work In Progress | 正在开发
 
 - A GUI interface (Maybe) | 图形用户界面（可能）
+
+- Auto scan all serial ports | 自动化搜索串口
