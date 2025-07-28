@@ -1,25 +1,20 @@
 # Python BurnTool for TaoLink TK8620
 
-## Development Environment Setup
-
-```bash
-git clone https://github.com/CactesTech/cactes-taolink-burntool.git
-pip install -r requirements.txt
-```
-
-## How To?
-
-### Program TK8620
+## How To Program TK8620
 
 ![image-20250728121750951](https://img.cactes.com/20250728-121803-645.png)
 
 Connections like above, RTS is used to trigger TK8620 auto reboot.
+
+Skip conda environment setup if you don't use conda, you can install burntool directly with pip.
 
 ```bash
 conda create -n burntool python=3.12
 conda activate burntool
 pip install -U burntool
 ```
+
+To load firmware to TK8620, use the following command:
 
 ```bash
 burntoolcli host --port=COM5 --fw firmware.hex run

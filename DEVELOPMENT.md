@@ -1,3 +1,11 @@
+
+# Environment Setup
+
+```bash
+git clone https://github.com/CactesTech/cactes-taolink-burntool.git
+pip install -r requirements.txt
+```
+
 # To Release
 
 ```
@@ -5,10 +13,6 @@ rm -rf dist/ build/ *.egg-info/
 python -m build
 python -m twine upload dist/*
 ```
-
-
-
-
 
 ### TK8620 OTA Protocol Parser (aka. the sniffer)
 
@@ -23,5 +27,3 @@ burntoolcli parser --port=COM39 run
 ```bash
 burntoolcli device --port=COM39 run
 ```
-
-## 
