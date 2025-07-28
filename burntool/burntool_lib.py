@@ -5,12 +5,14 @@ import threading
 from threading import Thread, Event, RLock
 from queue import Queue, Empty
 from enum import Enum, auto
+import importlib.resources
+from pathlib import Path
 
 import zlib
 
-from burntool_timer import BurnToolTimer
-from burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
-from burntool_util import intelhex_to_data_array, taolink_hex_to_data_array
+from .burntool_timer import BurnToolTimer
+from .burntool_serial import BurnToolSerial, burn_tool_serial_get_ports
+from .burntool_util import intelhex_to_data_array, taolink_hex_to_data_array
 
 class BurnToolOpCode(Enum):
     UP_OPCODE_GET_TYPE = 0x00
@@ -236,11 +238,20 @@ def log_set_level(debug):
 #---------------------------------------------------------------------------------------------
 # Host
 class BurnToolHost:
-    def __init__(self, port, fw="fw.hex", patch="patch.bin", wait=False, taolink=False, debug=False):
+    def __init__(self, port, fw="fw.hex", patch=None, wait=False, taolink=False, debug=False):
         log_set_level(debug)
 
         self.port = port
-        self.patch = f"{os.path.dirname(os.path.abspath(__file__))}/{patch}"
+
+        if patch is not None:
+            # 使用用户提供路径
+            self.patch = Path(patch).resolve()
+        else:
+            try:
+                self.patch = importlib.resources.files(__package__).joinpath("resources/patch.bin")
+            except Exception as e:
+                raise FileNotFoundError("patch.bin is not found") from e
+
         self.fw = fw
 
         self.sta = BurnToolStatus.IDLE
@@ -277,6 +288,8 @@ class BurnToolHost:
 
         self.fw_crc = zlib.crc32(self.fw_data) & 0xFFFFFFFF
 
+
+        logging.info(f"patch: {self.patch}")
         logging.debug(f"fw: {self.fw_start_addr:08X} - {self.fw_end_addr:08X}, {len(self.fw_data)} bytes, crc: {self.fw_crc:08X}")
 
         self.serial = BurnToolSerial(self.on_received, self.on_failed)
