@@ -1,6 +1,6 @@
 [project]
 name = "burntool"
-version = "0.1.1"
+version = "0.1.2"
 description = "Taolink TK8620 Burntool in python"
 authors = [{ name = "Cactes", email = "contact@cactes.com" }]
 readme = "README.md"
