@@ -2,9 +2,9 @@
 name = "burntool"
 version = "0.1.0"
 description = "Taolink TK8620 Burntool in python"
-authors = [{ name = "Cactes", email = "your@email.com" }]
+authors = [{ name = "Cactes", email = "contact@cactes.com" }]
 readme = "README.md"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 dependencies = [
     "fire==0.5.0",
     "intelhex==2.3.0",
