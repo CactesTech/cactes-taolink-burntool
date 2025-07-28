@@ -5,7 +5,12 @@ description = "Taolink TK8620 Burntool in python"
 authors = [{ name = "Cactes", email = "your@email.com" }]
 readme = "README.md"
 license = { text = "MIT" }
-dependencies = []
+dependencies = [
+    "fire==0.5.0",
+    "intelhex==2.3.0",
+    "pyserial==3.5"
+]
+requires-python = ">=3.7"
 
 [project.scripts]
 burntoolcli = "burntoolcli:main"
@@ -14,6 +19,10 @@ burntoolcli = "burntoolcli:main"
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["burntool*"]
+
 [tool.setuptools.package-data]
-"burntool.resources" = ["patch.bin"]
+"burntool" = ["resources/patch.bin"]
 

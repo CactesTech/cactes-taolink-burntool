@@ -3,7 +3,7 @@ import fire
 
 from burntool import BurnToolHost, BurnToolDevice, BurnToolParser, base16_to_bin, carr_to_bin
 
-if __name__ == '__main__':
+def main():
     fire.Fire({
         "host": BurnToolHost,
         "device": BurnToolDevice,
@@ -11,3 +11,6 @@ if __name__ == '__main__':
         "base16_to_bin": base16_to_bin,
         "carr_to_bin": carr_to_bin,
     })
+
+if __name__ == '__main__':
+    main()
