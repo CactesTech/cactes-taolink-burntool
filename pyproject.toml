@@ -23,6 +23,9 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["burntool*"]
 
+[tool.setuptools]
+py-modules = ["burntoolcli"]
+
 [tool.setuptools.package-data]
 "burntool" = ["resources/patch.bin"]
 
