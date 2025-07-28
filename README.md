@@ -9,7 +9,11 @@ pip install -r requirements.txt
 
 ## How To?
 
-### Program TK8620 (conda)
+### Program TK8620
+
+![image-20250728121750951](https://img.cactes.com/20250728-121803-645.png)
+
+Connections like above, RTS is used to trigger TK8620 auto reboot.
 
 ```bash
 conda create -n burntool python=3.12
@@ -19,20 +23,6 @@ pip install -U burntool
 
 ```bash
 burntoolcli host --port=COM5 --fw firmware.hex run
-```
-
-### TK8620 OTA Protocol Parser (aka. the sniffer)
-
-Parser mode is used to capture the OTA protocol from the TK8620 device. This helps understand the OTA procedure quickly.
-
-```bash
-burntoolcli parser --port=COM39 run
-```
-
-### Simulate a TK8620 OTA Device
-
-```bash
-burntoolcli device --port=COM39 run
 ```
 
 ## About Taolink Private Hex File
