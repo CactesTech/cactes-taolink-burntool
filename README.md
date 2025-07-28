@@ -23,7 +23,7 @@ burntoolcli host --port=COM5 --fw firmware.hex run
 
 ### TK8620 OTA Protocol Parser (aka. the sniffer)
 
-Parser mode is used to capture the OTA protocol from the TK8620 device. This helps understand the OTA procedrue quickly.
+Parser mode is used to capture the OTA protocol from the TK8620 device. This helps understand the OTA procedure quickly.
 
 ```bash
 burntoolcli parser --port=COM39 run
@@ -37,7 +37,7 @@ burntoolcli device --port=COM39 run
 
 ## About Taolink Private Hex File
 
-Taolink projects provide non-standard hex file, if you need standard hex file, using the following Nuclei Studio configuration.
+Taolink projects provide a non-standard hex file, if you need a standard hex file, use the following Nuclei Studio configuration.
 
 ```
 ${cross_prefix}${cross_objcopy}${cross_suffix} -O ihex "${ProjName}.elf" "${ProjName}.hex" && "${PWD}\..\..\..\..\..\..\..\Release\Scripts\intelhex2strhex.exe" ${ProjName}.hex
@@ -54,4 +54,3 @@ ${cross_prefix}${cross_objcopy}${cross_suffix} -O ihex "${ProjName}.elf" "${Proj
 ## Work In Progress
 
 - A GUI interface (Maybe)
-
